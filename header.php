@@ -6,6 +6,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php wp_head(); ?>
 </head>
+<!-- Thêm vào header.php ngay trước </head> -->
+<!-- Thêm vào header.php ngay trước </head> -->
+<style id="mobile-slider-fix">
+/* Mobile Hero Slider - Full Image Display */
+@media (max-width: 767px) {
+
+    /* Hero Section - Keep container padding */
+    .hero-section {
+        padding: 20px 0 40px !important;
+    }
+
+    .hero-section .container {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    /* Slider wrapper - Tăng height để hiển thị đầy đủ ảnh */
+    .hero-slider-wrapper {
+        margin-left: 0 !important;
+        height: 200px !important;
+        /* Giảm height để ảnh hiển thị full */
+        width: 100% !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        background: #000 !important;
+    }
+
+    /* Swiper */
+    .heroSwiper {
+        height: 100% !important;
+        width: 100% !important;
+        background: #000 !important;
+    }
+
+    .heroSwiper .swiper-slide {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Slide content - CONTAIN để hiển thị full ảnh */
+    .slide-content {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .slide-content img,
+    .slide-link img {
+        width: 100% !important;
+        height: 100% !important;
+        object-position: center !important;
+        display: block !important;
+    }
+
+    /* Navigation buttons */
+    .heroSwiper .swiper-button-prev,
+    .heroSwiper .swiper-button-next {
+        width: 32px !important;
+        height: 32px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-radius: 50%;
+    }
+
+    .heroSwiper .swiper-button-prev:after,
+    .heroSwiper .swiper-button-next:after {
+        font-size: 14px !important;
+        color: #000;
+    }
+
+    .heroSwiper .swiper-button-prev {
+        left: 10px !important;
+    }
+
+    .heroSwiper .swiper-button-next {
+        right: 10px !important;
+    }
+
+    /* Pagination */
+    .heroSwiper .swiper-pagination {
+        bottom: 12px !important;
+    }
+
+    .heroSwiper .swiper-pagination-bullet {
+        width: 8px !important;
+        height: 8px !important;
+        background: rgba(255, 255, 255, 0.6) !important;
+        opacity: 1 !important;
+    }
+
+    .heroSwiper .swiper-pagination-bullet-active {
+        background: var(--primary-color, #DB4444) !important;
+        border: 2px solid #fff !important;
+    }
+}
+
+/* Smaller phones */
+@media (max-width: 375px) {
+    .hero-slider-wrapper {
+        height: 180px !important;
+    }
+
+    .hero-section {
+        padding: 15px 0 30px !important;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+    .hero-slider-wrapper {
+        height: 170px !important;
+    }
+}
+</style>
 
 <body <?php body_class(); ?>>
     <?php wp_body_open(); ?>
@@ -28,13 +146,13 @@
     <nav class="navbar navbar-expand-lg bg-white border-bottom py-3">
         <div class="container">
             <?php if (has_custom_logo()) : ?>
-                <div class="custom-logo-link">
-                    <?php the_custom_logo(); ?>
-                </div>
+            <div class="custom-logo-link">
+                <?php the_custom_logo(); ?>
+            </div>
             <?php else : ?>
-                <a class="navbar-brand" href="<?php echo esc_url(home_url('/')); ?>">
-                    Exclusive
-                </a>
+            <a class="navbar-brand" href="<?php echo esc_url(home_url('/')); ?>">
+                Exclusive
+            </a>
             <?php endif; ?>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -80,7 +198,7 @@
 
                     echo '</ul>';
                 }
-                ?>
+?>
             </div>
 
             <div class="d-flex align-items-center gap-3">
@@ -95,34 +213,34 @@
 
                 <!-- Wishlist Icon -->
                 <?php if (function_exists('YITH_WCWL') && class_exists('YITH_WCWL')) : ?>
-                    <a href="<?php echo esc_url(YITH_WCWL()->get_wishlist_url()); ?>" class="position-relative">
-                        <i class="far fa-heart fa-lg"></i>
-                    </a>
+                <a href="<?php echo esc_url(YITH_WCWL()->get_wishlist_url()); ?>" class="position-relative">
+                    <i class="far fa-heart fa-lg"></i>
+                </a>
                 <?php else : ?>
-                    <a href="#" class="position-relative" title="<?php _e('Wishlist', 'exclusive'); ?>">
-                        <i class="far fa-heart fa-lg"></i>
-                    </a>
+                <a href="#" class="position-relative" title="<?php _e('Wishlist', 'exclusive'); ?>">
+                    <i class="far fa-heart fa-lg"></i>
+                </a>
                 <?php endif; ?>
 
                 <!-- Cart Icon -->
                 <?php if (class_exists('WooCommerce')) : ?>
-                    <a href="<?php echo esc_url(wc_get_cart_url()); ?>"
-                        class="text-decoration-none text-dark position-relative">
-                        <i class="fas fa-shopping-cart fa-lg"></i>
-                        <?php
-                        $cart_count = WC()->cart->get_cart_contents_count();
-                        if ($cart_count > 0) :
+                <a href="<?php echo esc_url(wc_get_cart_url()); ?>"
+                    class="text-decoration-none text-dark position-relative">
+                    <i class="fas fa-shopping-cart fa-lg"></i>
+                    <?php
+        $cart_count = WC()->cart->get_cart_contents_count();
+                    if ($cart_count > 0) :
                         ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                style="font-size: 10px;">
-                                <?php echo $cart_count; ?>
-                            </span>
-                        <?php endif; ?>
-                    </a>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        style="font-size: 10px;">
+                        <?php echo $cart_count; ?>
+                    </span>
+                    <?php endif; ?>
+                </a>
                 <?php else : ?>
-                    <a href="#" class="text-decoration-none text-dark">
-                        <i class="fas fa-shopping-cart fa-lg"></i>
-                    </a>
+                <a href="#" class="text-decoration-none text-dark">
+                    <i class="fas fa-shopping-cart fa-lg"></i>
+                </a>
                 <?php endif; ?>
             </div>
         </div>

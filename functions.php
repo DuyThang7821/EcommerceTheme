@@ -2,7 +2,7 @@
 
 /**
  * Exclusive Theme Functions
- * 
+ *
  * @package Exclusive
  * @version 1.0.0
  */
@@ -95,6 +95,62 @@ function exclusive_widgets_init()
 }
 add_action('widgets_init', 'exclusive_widgets_init');
 
+// Custom fields cho Slider
+function exclusive_slider_meta_boxes()
+{
+    add_meta_box(
+        'slider_details',
+        __('Slider Details', 'exclusive'),
+        'exclusive_slider_meta_box_callback',
+        'slider',
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'exclusive_slider_meta_boxes');
+
+function exclusive_slider_meta_box_callback($post)
+{
+    wp_nonce_field('exclusive_slider_meta_box', 'exclusive_slider_meta_box_nonce');
+
+    $slider_link = get_post_meta($post->ID, '_slider_link', true);
+    $slider_btn_text = get_post_meta($post->ID, '_slider_btn_text', true);
+    ?>
+<p>
+    <label for="slider_link"><?php _e('Link URL:', 'exclusive'); ?></label>
+    <input type="url" id="slider_link" name="slider_link" value="<?php echo esc_url($slider_link); ?>"
+        style="width: 100%;">
+</p>
+<p>
+    <label for="slider_btn_text"><?php _e('Button Text:', 'exclusive'); ?></label>
+    <input type="text" id="slider_btn_text" name="slider_btn_text" value="<?php echo esc_attr($slider_btn_text); ?>"
+        style="width: 100%;">
+</p>
+<?php
+}
+
+function exclusive_save_slider_meta_box($post_id)
+{
+    if (!isset($_POST['exclusive_slider_meta_box_nonce'])) {
+        return;
+    }
+    if (!wp_verify_nonce($_POST['exclusive_slider_meta_box_nonce'], 'exclusive_slider_meta_box')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (isset($_POST['slider_link'])) {
+        update_post_meta($post_id, '_slider_link', esc_url_raw($_POST['slider_link']));
+    }
+
+    if (isset($_POST['slider_btn_text'])) {
+        update_post_meta($post_id, '_slider_btn_text', sanitize_text_field($_POST['slider_btn_text']));
+    }
+}
+add_action('save_post', 'exclusive_save_slider_meta_box');
+
 // Custom Post Types
 function exclusive_register_post_types()
 {
@@ -162,27 +218,27 @@ function exclusive_team_meta_box_callback($post)
     $instagram = get_post_meta($post->ID, '_team_instagram', true);
     $linkedin = get_post_meta($post->ID, '_team_linkedin', true);
 
-?>
-    <p>
-        <label for="team_position"><?php _e('Position:', 'exclusive'); ?></label>
-        <input type="text" id="team_position" name="team_position" value="<?php echo esc_attr($position); ?>"
-            style="width: 100%;">
-    </p>
-    <p>
-        <label for="team_twitter"><?php _e('Twitter URL:', 'exclusive'); ?></label>
-        <input type="url" id="team_twitter" name="team_twitter" value="<?php echo esc_url($twitter); ?>"
-            style="width: 100%;">
-    </p>
-    <p>
-        <label for="team_instagram"><?php _e('Instagram URL:', 'exclusive'); ?></label>
-        <input type="url" id="team_instagram" name="team_instagram" value="<?php echo esc_url($instagram); ?>"
-            style="width: 100%;">
-    </p>
-    <p>
-        <label for="team_linkedin"><?php _e('LinkedIn URL:', 'exclusive'); ?></label>
-        <input type="url" id="team_linkedin" name="team_linkedin" value="<?php echo esc_url($linkedin); ?>"
-            style="width: 100%;">
-    </p>
+    ?>
+<p>
+    <label for="team_position"><?php _e('Position:', 'exclusive'); ?></label>
+    <input type="text" id="team_position" name="team_position" value="<?php echo esc_attr($position); ?>"
+        style="width: 100%;">
+</p>
+<p>
+    <label for="team_twitter"><?php _e('Twitter URL:', 'exclusive'); ?></label>
+    <input type="url" id="team_twitter" name="team_twitter" value="<?php echo esc_url($twitter); ?>"
+        style="width: 100%;">
+</p>
+<p>
+    <label for="team_instagram"><?php _e('Instagram URL:', 'exclusive'); ?></label>
+    <input type="url" id="team_instagram" name="team_instagram" value="<?php echo esc_url($instagram); ?>"
+        style="width: 100%;">
+</p>
+<p>
+    <label for="team_linkedin"><?php _e('LinkedIn URL:', 'exclusive'); ?></label>
+    <input type="url" id="team_linkedin" name="team_linkedin" value="<?php echo esc_url($linkedin); ?>"
+        style="width: 100%;">
+</p>
 <?php
 }
 
@@ -373,14 +429,13 @@ add_filter('loop_shop_per_page', 'exclusive_products_per_page');
 // Custom Walker for Bootstrap 5 Navigation
 class Exclusive_Bootstrap_Nav_Walker extends Walker_Nav_Menu
 {
-
-    function start_lvl(&$output, $depth = 0, $args = null)
+    public function start_lvl(&$output, $depth = 0, $args = null)
     {
         $indent = str_repeat("\t", $depth);
         $output .= "\n$indent<ul class=\"dropdown-menu\">\n";
     }
 
-    function start_el(&$output, $item, $depth = 0, $args = null, $id = 0)
+    public function start_el(&$output, $item, $depth = 0, $args = null, $id = 0)
     {
         $indent = ($depth) ? str_repeat("\t", $depth) : '';
 
@@ -441,7 +496,7 @@ class Exclusive_Bootstrap_Nav_Walker extends Walker_Nav_Menu
         $output .= apply_filters('walker_nav_menu_start_el', $item_output, $item, $depth, $args);
     }
 
-    function display_element($element, &$children_elements, $max_depth, $depth, $args, &$output)
+    public function display_element($element, &$children_elements, $max_depth, $depth, $args, &$output)
     {
         if (!$element) {
             return;
