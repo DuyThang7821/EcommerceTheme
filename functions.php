@@ -34,7 +34,25 @@ function exclusive_theme_setup()
     $GLOBALS['content_width'] = 1200;
 }
 add_action('after_setup_theme', 'exclusive_theme_setup');
+// =============================================
+// INCLUDE HELPER FILES - Add to functions.php
+// =============================================
 
+// Include section tag component
+require_once get_template_directory() . '/inc/section-tag.php';
+
+// Include other helpers if needed
+if (file_exists(get_template_directory() . '/inc/helpers.php')) {
+    require_once get_template_directory() . '/inc/helpers.php';
+}
+
+if (file_exists(get_template_directory() . '/inc/widgets.php')) {
+    require_once get_template_directory() . '/inc/widgets.php';
+}
+
+if (file_exists(get_template_directory() . '/inc/customizer.php')) {
+    require_once get_template_directory() . '/inc/customizer.php';
+}
 // Enqueue Styles and Scripts
 function exclusive_enqueue_assets()
 {
@@ -511,3 +529,212 @@ class Exclusive_Bootstrap_Nav_Walker extends Walker_Nav_Menu
         parent::display_element($element, $children_elements, $max_depth, $depth, $args, $output);
     }
 }
+// =============================================
+// AJAX HANDLERS - Add to functions.php
+// =============================================
+
+/**
+ * Load More Products AJAX Handler
+ */
+function exclusive_load_more_products()
+{
+    check_ajax_referer('exclusive-nonce', 'nonce');
+
+    $page = isset($_POST['page']) ? absint($_POST['page']) : 1;
+
+    $args = array(
+        'post_type' => 'product',
+        'posts_per_page' => 8,
+        'paged' => $page,
+        'meta_key' => 'total_sales',
+        'orderby' => 'meta_value_num',
+        'order' => 'DESC'
+    );
+
+    $query = new WP_Query($args);
+
+    if ($query->have_posts()) {
+        ob_start();
+
+        while ($query->have_posts()) : $query->the_post();
+            global $product;
+            $product_id = get_the_ID();
+            $regular_price = $product->get_regular_price();
+            $sale_price = $product->get_sale_price();
+            $discount_percent = $sale_price ? round((($regular_price - $sale_price) / $regular_price) * 100) : 0;
+            ?>
+<div class="col-6 col-md-4 col-lg-3 product-item-ajax" style="opacity: 0; animation: fadeInUp 0.5s forwards;">
+    <div class="product-card">
+        <!-- Product Image -->
+        <div class="product-img-box">
+            <?php if ($discount_percent > 0) : ?>
+            <span class="discount-badge">-<?php echo $discount_percent; ?>%</span>
+            <?php endif; ?>
+
+            <!-- Action Icons -->
+            <div class="action-icons">
+                <div class="action-icon wishlist-btn" data-product-id="<?php echo $product_id; ?>">
+                    <i class="far fa-heart"></i>
+                </div>
+                <div class="action-icon quick-view-btn" data-product-id="<?php echo $product_id; ?>">
+                    <i class="far fa-eye"></i>
+                </div>
+            </div>
+
+            <a href="<?php the_permalink(); ?>">
+                <?php if (has_post_thumbnail()) : ?>
+                <?php the_post_thumbnail('medium'); ?>
+                <?php else : ?>
+                <img src="<?php echo wc_placeholder_img_src(); ?>" alt="<?php the_title(); ?>">
+                <?php endif; ?>
+            </a>
+
+            <!-- Add to Cart Button -->
+            <a href="<?php echo esc_url($product->add_to_cart_url()); ?>" class="add-to-cart-btn"
+                data-product-id="<?php echo $product_id; ?>">
+                Add To Cart
+            </a>
+        </div>
+
+        <!-- Product Info -->
+        <div class="product-info mt-3">
+            <h6 class="product-name mb-2">
+                <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+            </h6>
+
+
+            <div class="product-price mb-2">
+                <?php if ($sale_price) : ?>
+                <span
+                    class="sale-price text-danger fw-bold"><?php echo number_format($sale_price, 0, ',', '.'); ?>$</span>
+                <span
+                    class="regular-price text-muted text-decoration-line-through ms-2"><?php echo number_format($regular_price, 0, ',', '.'); ?>đ</span>
+                <?php else : ?>
+                <span class="price fw-bold"><?php echo number_format($regular_price, 0, ',', '.'); ?>$</span>
+                <?php endif; ?>
+            </div>
+
+            <!-- Rating -->
+            <div class="product-rating d-flex align-items-center gap-2">
+                <?php
+                                    $average_rating = $product->get_average_rating();
+            $rating_count = $product->get_rating_count();
+            ?>
+                <div class="stars text-warning">
+                    <?php for ($i = 1; $i <= 5; $i++) : ?>
+                    <i class="<?php echo $i <= $average_rating ? 'fas' : 'far'; ?> fa-star"></i>
+                    <?php endfor; ?>
+                </div>
+                <span class="rating-count text-muted">(<?php echo $rating_count; ?>)</span>
+            </div>
+        </div>
+    </div>
+</div>
+<?php
+        endwhile;
+        wp_reset_postdata();
+
+        $html = ob_get_clean();
+
+        wp_send_json_success(array(
+            'html' => $html,
+            'page' => $page
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => 'No more products'
+        ));
+    }
+}
+add_action('wp_ajax_load_more_products', 'exclusive_load_more_products');
+add_action('wp_ajax_nopriv_load_more_products', 'exclusive_load_more_products');
+
+/**
+ * Add to Cart AJAX Handler
+ */
+function exclusive_ajax_add_to_cart()
+{
+    check_ajax_referer('exclusive-nonce', 'nonce');
+
+    $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
+
+    if ($product_id) {
+        $added = WC()->cart->add_to_cart($product_id, 1);
+
+        if ($added) {
+            wp_send_json_success(array(
+                'message' => 'Product added to cart',
+                'cart_count' => WC()->cart->get_cart_contents_count()
+            ));
+        } else {
+            wp_send_json_error(array(
+                'message' => 'Failed to add product'
+            ));
+        }
+    } else {
+        wp_send_json_error(array(
+            'message' => 'Invalid product ID'
+        ));
+    }
+}
+add_action('wp_ajax_add_to_cart', 'exclusive_ajax_add_to_cart');
+add_action('wp_ajax_nopriv_add_to_cart', 'exclusive_ajax_add_to_cart');
+
+/**
+ * Add fadeInUp animation CSS
+ */
+function exclusive_add_animation_css()
+{
+    ?>
+<style>
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product-item-ajax {
+    animation-fill-mode: forwards;
+}
+
+.product-item-ajax:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.product-item-ajax:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.product-item-ajax:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.product-item-ajax:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.product-item-ajax:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.product-item-ajax:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+.product-item-ajax:nth-child(7) {
+    animation-delay: 0.7s;
+}
+
+.product-item-ajax:nth-child(8) {
+    animation-delay: 0.8s;
+}
+</style>
+<?php
+}
+add_action('wp_head', 'exclusive_add_animation_css');
