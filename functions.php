@@ -738,3 +738,186 @@ function exclusive_add_animation_css()
 <?php
 }
 add_action('wp_head', 'exclusive_add_animation_css');
+// =============================================
+// CONTACT FORM HANDLER - Add to functions.php
+// =============================================
+
+/**
+ * Handle Contact Form Submission
+ */
+function exclusive_submit_contact_form()
+{
+    // Verify nonce
+    if (!isset($_POST['contact_nonce']) || !wp_verify_nonce($_POST['contact_nonce'], 'contact_form_nonce')) {
+        wp_send_json_error(array(
+            'message' => 'Security check failed.'
+        ));
+    }
+
+    // Sanitize input
+    $name = sanitize_text_field($_POST['contact_name']);
+    $email = sanitize_email($_POST['contact_email']);
+    $phone = sanitize_text_field($_POST['contact_phone']);
+    $message = sanitize_textarea_field($_POST['contact_message']);
+
+    // Validate
+    if (empty($name) || empty($email) || empty($phone) || empty($message)) {
+        wp_send_json_error(array(
+            'message' => 'Please fill in all required fields.'
+        ));
+    }
+
+    if (!is_email($email)) {
+        wp_send_json_error(array(
+            'message' => 'Please enter a valid email address.'
+        ));
+    }
+
+    // Prepare email
+    $to = get_option('admin_email'); // Admin email
+    $subject = 'New Contact Form Submission from ' . $name;
+
+    $email_body = "Name: $name\n";
+    $email_body .= "Email: $email\n";
+    $email_body .= "Phone: $phone\n";
+    $email_body .= "Message:\n$message\n";
+
+    $headers = array(
+        'Content-Type: text/plain; charset=UTF-8',
+        'From: ' . get_bloginfo('name') . ' <' . get_option('admin_email') . '>',
+        'Reply-To: ' . $name . ' <' . $email . '>'
+    );
+
+    // Send email
+    $sent = wp_mail($to, $subject, $email_body, $headers);
+
+    if ($sent) {
+        // Optionally save to database
+        exclusive_save_contact_form_entry($name, $email, $phone, $message);
+
+        wp_send_json_success(array(
+            'message' => 'Thank you! Your message has been sent successfully. We will contact you soon.'
+        ));
+    } else {
+        wp_send_json_error(array(
+            'message' => 'Failed to send message. Please try again later.'
+        ));
+    }
+}
+add_action('wp_ajax_submit_contact_form', 'exclusive_submit_contact_form');
+add_action('wp_ajax_nopriv_submit_contact_form', 'exclusive_submit_contact_form');
+
+/**
+ * Save contact form entry to database (optional)
+ */
+function exclusive_save_contact_form_entry($name, $email, $phone, $message)
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'contact_forms';
+
+    // Check if table exists, if not create it
+    $charset_collate = $wpdb->get_charset_collate();
+
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        name varchar(100) NOT NULL,
+        email varchar(100) NOT NULL,
+        phone varchar(50) NOT NULL,
+        message text NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+
+    // Insert entry
+    $wpdb->insert(
+        $table_name,
+        array(
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'message' => $message,
+        ),
+        array('%s', '%s', '%s', '%s')
+    );
+}
+
+/**
+ * Create Admin Menu to View Contact Form Submissions
+ */
+function exclusive_contact_forms_menu()
+{
+    add_menu_page(
+        'Contact Forms',
+        'Contact Forms',
+        'manage_options',
+        'contact-forms',
+        'exclusive_contact_forms_page',
+        'dashicons-email',
+        30
+    );
+}
+add_action('admin_menu', 'exclusive_contact_forms_menu');
+
+/**
+ * Display Contact Forms Admin Page
+ */
+function exclusive_contact_forms_page()
+{
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'contact_forms';
+
+    // Handle delete action
+    if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+        $id = absint($_GET['id']);
+        $wpdb->delete($table_name, array('id' => $id));
+        echo '<div class="notice notice-success"><p>Entry deleted successfully.</p></div>';
+    }
+
+    // Get all entries
+    $entries = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC");
+
+    ?>
+<div class="wrap">
+    <h1>Contact Form Submissions</h1>
+
+    <?php if (empty($entries)) : ?>
+    <p>No contact form submissions yet.</p>
+    <?php else : ?>
+    <table class="wp-list-table widefat fixed striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Message</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($entries as $entry) : ?>
+            <tr>
+                <td><?php echo $entry->id; ?></td>
+                <td><strong><?php echo esc_html($entry->name); ?></strong></td>
+                <td><?php echo esc_html($entry->email); ?></td>
+                <td><?php echo esc_html($entry->phone); ?></td>
+                <td><?php echo esc_html(wp_trim_words($entry->message, 15)); ?></td>
+                <td><?php echo date('M d, Y H:i', strtotime($entry->created_at)); ?></td>
+                <td>
+                    <a href="?page=contact-forms&action=view&id=<?php echo $entry->id; ?>"
+                        class="button button-small">View</a>
+                    <a href="?page=contact-forms&action=delete&id=<?php echo $entry->id; ?>" class="button button-small"
+                        onclick="return confirm('Are you sure?')">Delete</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php endif; ?>
+</div>
+<?php
+}

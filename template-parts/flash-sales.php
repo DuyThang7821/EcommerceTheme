@@ -141,7 +141,7 @@ $end_time = strtotime('today 23:59:59') * 1000; // Convert to milliseconds for J
                                     <span
                                         class="sale-price text-danger fw-bold"><?php echo number_format($sale_price, 0, ',', '.'); ?>$</span>
                                     <span
-                                        class="regular-price text-muted text-decoration-line-through ms-2"><?php echo number_format($regular_price, 0, ',', '.'); ?>đ</span>
+                                        class="regular-price text-muted text-decoration-line-through ms-2"><?php echo number_format($regular_price, 0, ',', '.'); ?>$</span>
                                     <?php else : ?>
                                     <span
                                         class="price"><?php echo number_format($regular_price, 0, ',', '.'); ?>$</span>

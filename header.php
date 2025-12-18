@@ -6,8 +6,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php wp_head(); ?>
 </head>
-<!-- Thêm vào header.php ngay trước </head> -->
-<!-- Thêm vào header.php ngay trước </head> -->
+<style>
+/* FORCE FIX: Add To Cart Button - Slide Up from Bottom */
+.add-to-cart-btn,
+a.add-to-cart-btn {
+    position: absolute !important;
+    bottom: -50px !important;
+    top: 204px;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 44px !important;
+    background: #000 !important;
+    color: #fff !important;
+    text-align: center !important;
+    padding: 10px !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    line-height: 24px !important;
+    text-decoration: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    transition: bottom 0.3s ease, background 0.3s ease !important;
+}
+
+/* Khi hover vào product card hoặc product-img-box */
+.product-card:hover .add-to-cart-btn,
+.product-img-box:hover .add-to-cart-btn {
+    bottom: 0 !important;
+    /* Trượt lên vị trí đáy */
+}
+
+/* Hover effect cho chính nút */
+.add-to-cart-btn:hover {
+    background: #DB4444 !important;
+}
+
+/* Đảm bảo product-img-box có position và overflow */
+.product-img-box {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Đảm bảo product-card cũng có position */
+.product-card {
+    position: relative !important;
+}
+</style>
 <style id="mobile-slider-fix">
 /* Mobile Hero Slider - Full Image Display */
 @media (max-width: 767px) {
