@@ -921,3 +921,108 @@ function exclusive_contact_forms_page()
 </div>
 <?php
 }
+/**
+ * Custom Cart & Checkout Templates
+ */
+
+// Override WooCommerce templates
+add_filter('woocommerce_locate_template', 'exclusive_woocommerce_locate_template', 10, 3);
+
+function exclusive_woocommerce_locate_template($template, $template_name, $template_path)
+{
+    global $woocommerce;
+
+    $_template = $template;
+
+    if (!$template_path) {
+        $template_path = $woocommerce->template_url;
+    }
+
+    $plugin_path = untrailingslashit(plugin_dir_path(__FILE__)) . '/woocommerce/';
+
+    // Look within passed path within the theme
+    $template = locate_template(
+        array(
+            $template_path . $template_name,
+            $template_name
+        )
+    );
+
+    // Modification: Get the template from this plugin, if it exists
+    if (!$template && file_exists($plugin_path . $template_name)) {
+        $template = $plugin_path . $template_name;
+    }
+
+    // Use default template
+    if (!$template) {
+        $template = $_template;
+    }
+
+    return $template;
+}
+
+// Remove default WooCommerce styles
+add_filter('woocommerce_enqueue_styles', '__return_empty_array');
+
+// Add custom cart styles
+add_action('wp_enqueue_scripts', 'exclusive_cart_checkout_styles');
+
+function exclusive_cart_checkout_styles()
+{
+    if (is_cart() || is_checkout()) {
+        // CSS đã được nhúng trong template
+    }
+}
+
+// Update cart fragments for AJAX
+add_filter('woocommerce_add_to_cart_fragments', 'exclusive_cart_count_fragments');
+
+function exclusive_cart_count_fragments($fragments)
+{
+    ob_start();
+    ?>
+<span class="cart-count"><?php echo WC()->cart->get_cart_contents_count(); ?></span>
+<?php
+        $fragments['.cart-count'] = ob_get_clean();
+
+    return $fragments;
+}
+
+// Customize checkout fields
+add_filter('woocommerce_checkout_fields', 'exclusive_customize_checkout_fields');
+
+function exclusive_customize_checkout_fields($fields)
+{
+    // Remove unnecessary fields
+    unset($fields['billing']['billing_company']);
+    unset($fields['billing']['billing_address_2']);
+
+    // Change placeholder text
+    $fields['billing']['billing_first_name']['placeholder'] = 'First Name';
+    $fields['billing']['billing_last_name']['placeholder'] = 'Last Name';
+    $fields['billing']['billing_email']['placeholder'] = 'Email Address';
+    $fields['billing']['billing_phone']['placeholder'] = 'Phone Number';
+    $fields['billing']['billing_address_1']['placeholder'] = 'Street Address';
+    $fields['billing']['billing_city']['placeholder'] = 'Town/City';
+
+    return $fields;
+}
+
+// Show cart count in header
+add_action('wp_footer', 'exclusive_cart_count_update');
+
+function exclusive_cart_count_update()
+{
+    if (is_cart() || is_checkout()) {
+        return;
+    }
+    ?>
+<script type="text/javascript">
+jQuery(document).ready(function($) {
+    $(document.body).on('added_to_cart', function() {
+        // Update cart count được xử lý bởi WooCommerce fragments
+    });
+});
+</script>
+<?php
+}
