@@ -41,6 +41,7 @@ get_template_part('template-parts/services');
 // If using Elementor for additional content
 if (have_posts()) :
     while (have_posts()) : the_post();
+        //[woocommerce_cart]
         the_content();
     endwhile;
 endif;

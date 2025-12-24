@@ -133,7 +133,7 @@ function exclusive_slider_meta_box_callback($post)
 
     $slider_link = get_post_meta($post->ID, '_slider_link', true);
     $slider_btn_text = get_post_meta($post->ID, '_slider_btn_text', true);
-    ?>
+?>
 <p>
     <label for="slider_link"><?php _e('Link URL:', 'exclusive'); ?></label>
     <input type="url" id="slider_link" name="slider_link" value="<?php echo esc_url($slider_link); ?>"
@@ -236,7 +236,7 @@ function exclusive_team_meta_box_callback($post)
     $instagram = get_post_meta($post->ID, '_team_instagram', true);
     $linkedin = get_post_meta($post->ID, '_team_linkedin', true);
 
-    ?>
+?>
 <p>
     <label for="team_position"><?php _e('Position:', 'exclusive'); ?></label>
     <input type="text" id="team_position" name="team_position" value="<?php echo esc_attr($position); ?>"
@@ -562,7 +562,7 @@ function exclusive_load_more_products()
             $regular_price = $product->get_regular_price();
             $sale_price = $product->get_sale_price();
             $discount_percent = $sale_price ? round((($regular_price - $sale_price) / $regular_price) * 100) : 0;
-            ?>
+    ?>
 <div class="col-6 col-md-4 col-lg-3 product-item-ajax" style="opacity: 0; animation: fadeInUp 0.5s forwards;">
     <div class="product-card">
         <!-- Product Image -->
@@ -617,9 +617,9 @@ function exclusive_load_more_products()
             <!-- Rating -->
             <div class="product-rating d-flex align-items-center gap-2">
                 <?php
-                                    $average_rating = $product->get_average_rating();
-            $rating_count = $product->get_rating_count();
-            ?>
+                            $average_rating = $product->get_average_rating();
+                            $rating_count = $product->get_rating_count();
+                            ?>
                 <div class="stars text-warning">
                     <?php for ($i = 1; $i <= 5; $i++) : ?>
                     <i class="<?php echo $i <= $average_rating ? 'fas' : 'far'; ?> fa-star"></i>
@@ -879,7 +879,7 @@ function exclusive_contact_forms_page()
     // Get all entries
     $entries = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC");
 
-    ?>
+?>
 <div class="wrap">
     <h1>Contact Form Submissions</h1>
 
@@ -980,10 +980,10 @@ add_filter('woocommerce_add_to_cart_fragments', 'exclusive_cart_count_fragments'
 function exclusive_cart_count_fragments($fragments)
 {
     ob_start();
-    ?>
+?>
 <span class="cart-count"><?php echo WC()->cart->get_cart_contents_count(); ?></span>
 <?php
-        $fragments['.cart-count'] = ob_get_clean();
+    $fragments['.cart-count'] = ob_get_clean();
 
     return $fragments;
 }
@@ -1016,7 +1016,7 @@ function exclusive_cart_count_update()
     if (is_cart() || is_checkout()) {
         return;
     }
-    ?>
+?>
 <script type="text/javascript">
 jQuery(document).ready(function($) {
     $(document.body).on('added_to_cart', function() {

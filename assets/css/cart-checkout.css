@@ -1,0 +1,170 @@
+/* --- GLOBAL VARIABLES --- */
+:root {
+    --primary-red: #DB4444;
+    --text-black: #000;
+    --border-color: rgba(0,0,0,0.4);
+    --bg-gray: #F5F5F5;
+}
+
+/* --- BUTTONS --- */
+.ex-btn-red {
+    background: var(--primary-red);
+    color: #fff !important;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.3s;
+    display: inline-block;
+}
+.ex-btn-red:hover {
+    background: #c93e3e;
+}
+.ex-btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: #000;
+    padding: 12px 30px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.ex-btn-outline:hover {
+    border-color: var(--primary-red);
+    color: var(--primary-red);
+}
+
+/* --- CART PAGE STYLING --- */
+.ex-cart-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.ex-cart-table-wrapper th {
+    padding: 20px;
+    text-align: left;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border-color);
+}
+.ex-cart-table-wrapper td {
+    padding: 20px;
+    vertical-align: middle;
+    border-bottom: 1px solid #eee;
+}
+.ex-cart-table-wrapper img {
+    width: 60px;
+    height: auto;
+}
+/* Input số lượng */
+.ex-cart-table-wrapper .quantity input {
+    width: 60px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+/* Nút xóa */
+.product-remove a.remove {
+    color: var(--primary-red) !important;
+    font-size: 20px;
+}
+
+/* Coupon */
+.ex-coupon-form input {
+    border: 1px solid #000;
+    padding: 10px 20px;
+    border-radius: 4px;
+    width: 300px;
+}
+
+/* Cart Totals Box */
+.ex-cart-total-box {
+    border: 1.5px solid #000;
+    border-radius: 4px;
+    padding: 30px;
+}
+.ex-cart-total-box h3 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+.ex-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.4);
+}
+.ex-total-row.total {
+    border-bottom: none;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* --- CHECKOUT PAGE STYLING --- */
+
+/* Billing Inputs */
+.woocommerce-billing-fields input,
+.woocommerce-billing-fields textarea,
+.select2-container--default .select2-selection--single {
+    background: #F5F5F5;
+    border: none;
+    border-radius: 4px;
+    padding: 12px;
+    width: 100%;
+    height: 50px; /* Chiều cao cố định cho đẹp */
+    margin-bottom: 15px;
+}
+.woocommerce-billing-fields label {
+    margin-bottom: 8px;
+    color: rgba(0,0,0,0.5);
+    display: block;
+}
+/* Ẩn dấu * bắt buộc đỏ lòm mặc định */
+.required { color: var(--primary-red); text-decoration: none; }
+
+/* Your Order Column */
+.ex-order-review-box {
+    margin-top: 20px;
+}
+.woocommerce-checkout-review-order-table th,
+.woocommerce-checkout-review-order-table td {
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+.woocommerce-checkout-review-order-table img {
+    width: 40px;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+/* Phương thức thanh toán */
+.wc_payment_methods {
+    padding: 0 !important;
+    list-style: none !important;
+    margin-top: 30px;
+}
+.wc_payment_methods li {
+    margin-bottom: 15px;
+}
+.wc_payment_methods label {
+    font-weight: 500;
+    margin-left: 10px;
+}
+/* Nút Place Order */
+#place_order {
+    background: var(--primary-red);
+    color: #fff;
+    width: auto;
+    padding: 15px 40px;
+    border-radius: 4px;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 20px;
+    cursor: pointer;
+}
+#place_order:hover {
+    background: #c93e3e;
+}
