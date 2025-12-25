@@ -1,32 +1,36 @@
 <?php
 
 /**
- * Checkout Form Template
- * Custom design for WooCommerce checkout
+ * Checkout Form
  *
  * @package Exclusive
  */
 
 defined('ABSPATH') || exit;
 
-do_action('woocommerce_before_checkout_form', $checkout);
+// Check if cart is empty
+if (WC()->cart->is_empty() && !is_customize_preview() && apply_filters('woocommerce_checkout_redirect_empty_cart', true)) {
+    return;
+}
+
+do_action('woocommerce_before_checkout_form', WC()->checkout());
 
 // If checkout registration is disabled and not logged in, the user cannot checkout.
-if (!$checkout->is_registration_enabled() && $checkout->is_registration_required() && !is_user_logged_in()) {
+if (!WC()->checkout()->is_registration_enabled() && WC()->checkout()->is_registration_required() && !is_user_logged_in()) {
     echo esc_html(apply_filters('woocommerce_checkout_must_be_logged_in_message', __('You must be logged in to checkout.', 'woocommerce')));
     return;
 }
 ?>
 
-<div class="custom-checkout-page">
+<div class="custom-checkout-wrapper">
     <!-- Breadcrumb -->
     <div class="breadcrumb-section">
         <div class="container">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="<?php echo home_url(); ?>">Home</a></li>
-                    <li class="breadcrumb-item"><a href="<?php echo wc_get_cart_url(); ?>">Cart</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+                    <li class="breadcrumb-item"><a href="<?php echo esc_url(home_url('/')); ?>">Home</a></li>
+                    <li class="breadcrumb-item"><a href="<?php echo esc_url(wc_get_cart_url()); ?>">Cart</a></li>
+                    <li class="breadcrumb-item active">Checkout</li>
                 </ol>
             </nav>
         </div>
@@ -36,59 +40,62 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
         <form name="checkout" method="post" class="checkout woocommerce-checkout"
             action="<?php echo esc_url(wc_get_checkout_url()); ?>" enctype="multipart/form-data">
 
+            <?php if (WC()->checkout()->get_checkout_fields()) : ?>
+
+            <?php do_action('woocommerce_checkout_before_customer_details'); ?>
+
             <div class="row g-5">
-                <!-- Billing Details -->
+                <!-- Left Column - Billing Details -->
                 <div class="col-lg-7">
-                    <div class="billing-details-wrapper">
-                        <h3 class="checkout-section-title mb-4">Billing Details</h3>
+                    <div class="checkout-billing">
+                        <h3 class="checkout-title">Billing Details</h3>
 
-                        <?php if ($checkout->get_checkout_fields()) : ?>
+                        <div class="woocommerce-billing-fields__field-wrapper">
+                            <?php
+                                $fields = WC()->checkout()->get_checkout_fields('billing');
 
-                        <?php do_action('woocommerce_checkout_before_customer_details'); ?>
-
-                        <div class="checkout-fields">
-                            <?php do_action('woocommerce_checkout_billing'); ?>
+                foreach ($fields as $key => $field) {
+                    woocommerce_form_field($key, $field, WC()->checkout()->get_value($key));
+                }
+                ?>
                         </div>
-
-                        <?php do_action('woocommerce_checkout_after_customer_details'); ?>
-
-                        <?php endif; ?>
                     </div>
+
+                    <?php do_action('woocommerce_checkout_after_customer_details'); ?>
                 </div>
 
-                <!-- Order Review -->
+                <!-- Right Column - Order Review -->
                 <div class="col-lg-5">
-                    <div class="order-review-wrapper">
-                        <h3 id="order_review_heading" class="checkout-section-title mb-4">
-                            <?php esc_html_e('Your order', 'woocommerce'); ?>
-                        </h3>
+                    <div class="checkout-review">
+                        <h3 class="checkout-title" id="order_review_heading">Your order</h3>
 
                         <?php do_action('woocommerce_checkout_before_order_review'); ?>
 
                         <div id="order_review" class="woocommerce-checkout-review-order">
 
                             <!-- Order Items -->
-                            <div class="order-items-list">
+                            <div class="order-items-wrapper">
                                 <?php
-                                do_action('woocommerce_review_order_before_cart_contents');
+                    do_action('woocommerce_review_order_before_cart_contents');
 
-                                foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
-                                    $_product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
+                foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+                    $_product = apply_filters('woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key);
 
-                                    if ($_product && $_product->exists() && $cart_item['quantity'] > 0 && apply_filters('woocommerce_checkout_cart_item_visible', true, $cart_item, $cart_item_key)) {
-                                ?>
-                                <div class="order-item">
+                    if ($_product && $_product->exists() && $cart_item['quantity'] > 0 && apply_filters('woocommerce_checkout_cart_item_visible', true, $cart_item, $cart_item_key)) {
+                        ?>
+                                <div class="checkout-order-item">
                                     <div class="item-info">
                                         <div class="item-thumbnail">
-                                            <?php echo $_product->get_image(array(54, 54)); ?>
+                                            <?php
+                                            $thumbnail = apply_filters('woocommerce_cart_item_thumbnail', $_product->get_image(array(54, 54)), $cart_item, $cart_item_key);
+                        echo $thumbnail;
+                        ?>
                                         </div>
                                         <div class="item-details">
                                             <div class="item-name">
                                                 <?php echo wp_kses_post(apply_filters('woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key)); ?>
                                             </div>
-                                            <div class="item-quantity">
-                                                × <?php echo $cart_item['quantity']; ?>
-                                            </div>
+                                            <div class="item-qty">× <?php echo $cart_item['quantity']; ?></div>
                                         </div>
                                     </div>
                                     <div class="item-total">
@@ -96,15 +103,30 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
                                     </div>
                                 </div>
                                 <?php
-                                    }
-                                }
+                    }
+                }
 
-                                do_action('woocommerce_review_order_after_cart_contents');
-                                ?>
+                do_action('woocommerce_review_order_after_cart_contents');
+                ?>
                             </div>
 
+                            <!-- Coupon Code -->
+                            <?php if (wc_coupons_enabled()) : ?>
+                            <div class="coupon-wrapper">
+                                <details class="coupon-details">
+                                    <summary>Add coupon code</summary>
+                                    <div class="coupon-form">
+                                        <input type="text" name="coupon_code" class="input-text"
+                                            placeholder="Coupon code" id="coupon_code" value="" />
+                                        <button type="button" class="button btn-apply-coupon" name="apply_coupon"
+                                            value="Apply coupon">Apply</button>
+                                    </div>
+                                </details>
+                            </div>
+                            <?php endif; ?>
+
                             <!-- Order Totals -->
-                            <div class="order-totals">
+                            <div class="checkout-totals">
                                 <div class="totals-row">
                                     <span>Subtotal:</span>
                                     <span><?php wc_cart_totals_subtotal_html(); ?></span>
@@ -112,8 +134,12 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
                                 <?php foreach (WC()->cart->get_coupons() as $code => $coupon) : ?>
                                 <div class="totals-row coupon-row">
-                                    <span>Coupon: <?php echo esc_html($code); ?></span>
-                                    <span><?php wc_cart_totals_coupon_html($coupon); ?></span>
+                                    <span>
+                                        <?php wc_cart_totals_coupon_label($coupon); ?>
+                                    </span>
+                                    <span>
+                                        <?php wc_cart_totals_coupon_html($coupon); ?>
+                                    </span>
                                 </div>
                                 <?php endforeach; ?>
 
@@ -156,27 +182,27 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
                             </div>
 
                             <!-- Payment Methods -->
-                            <div class="payment-methods-wrapper">
+                            <div class="checkout-payment">
                                 <?php do_action('woocommerce_review_order_before_payment'); ?>
 
                                 <div id="payment" class="woocommerce-checkout-payment">
                                     <?php if (WC()->cart->needs_payment()) : ?>
                                     <ul class="wc_payment_methods payment_methods methods">
                                         <?php
-                                            if (!empty($available_gateways = WC()->payment_gateways()->get_available_payment_gateways())) {
-                                                foreach ($available_gateways as $gateway) {
-                                                    wc_get_template('checkout/payment-method.php', array('gateway' => $gateway));
-                                                }
-                                            } else {
-                                                echo '<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">' . apply_filters('woocommerce_no_available_payment_methods_message', WC()->customer->get_billing_country() ? esc_html__('Sorry, it seems that there are no available payment methods for your state. Please contact us if you require assistance or wish to make alternate arrangements.', 'woocommerce') : esc_html__('Please fill in your details above to see available payment methods.', 'woocommerce')) . '</li>';
-                                            }
-                                            ?>
+                            if (!empty($available_gateways = WC()->payment_gateways()->get_available_payment_gateways())) {
+                                foreach ($available_gateways as $gateway) {
+                                    wc_get_template('checkout/payment-method.php', array('gateway' => $gateway));
+                                }
+                            } else {
+                                echo '<li class="woocommerce-notice woocommerce-notice--info woocommerce-info">' . apply_filters('woocommerce_no_available_payment_methods_message', WC()->customer->get_billing_country() ? esc_html__('Sorry, it seems that there are no available payment methods. Please contact us if you require assistance.', 'woocommerce') : esc_html__('Please fill in your details above to see available payment methods.', 'woocommerce')) . '</li>';
+                            }
+?>
                                     </ul>
                                     <?php endif; ?>
 
                                     <div class="form-row place-order">
                                         <noscript>
-                                            <?php esc_html_e('Since your browser does not support JavaScript, or it is disabled, please ensure you click the <em>Update Totals</em> button before placing your order. You may be charged more than the amount stated above if you fail to do so.', 'woocommerce'); ?>
+                                            <?php esc_html_e('Since your browser does not support JavaScript, or it is disabled, please ensure you click the <em>Update Totals</em> button before placing your order.', 'woocommerce'); ?>
                                             <br /><button type="submit" class="button alt"
                                                 name="woocommerce_checkout_update_totals"
                                                 value="<?php esc_attr_e('Update totals', 'woocommerce'); ?>"><?php esc_html_e('Update totals', 'woocommerce'); ?></button>
@@ -186,7 +212,12 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
                                         <?php do_action('woocommerce_review_order_before_submit'); ?>
 
-                                        <?php echo apply_filters('woocommerce_order_button_html', '<button type="submit" class="btn btn-primary-custom w-100 place-order-btn" name="woocommerce_checkout_place_order" id="place_order" value="' . esc_attr($order_button_text) . '" data-value="' . esc_attr($order_button_text) . '">' . esc_html($order_button_text) . '</button>'); ?>
+                                        <button type="submit" class="button alt btn-place-order"
+                                            name="woocommerce_checkout_place_order" id="place_order"
+                                            value="<?php esc_attr_e('Place order', 'woocommerce'); ?>"
+                                            data-value="<?php esc_attr_e('Place order', 'woocommerce'); ?>">
+                                            <?php esc_html_e('Place order', 'woocommerce'); ?>
+                                        </button>
 
                                         <?php do_action('woocommerce_review_order_after_submit'); ?>
 
@@ -196,29 +227,32 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
                                 <?php do_action('woocommerce_review_order_after_payment'); ?>
                             </div>
+
                         </div>
 
                         <?php do_action('woocommerce_checkout_after_order_review'); ?>
                     </div>
                 </div>
             </div>
+
+            <?php endif; ?>
+
         </form>
 
-        <?php do_action('woocommerce_after_checkout_form', $checkout); ?>
+        <?php do_action('woocommerce_after_checkout_form', WC()->checkout()); ?>
     </div>
 </div>
 
 <style>
 /* ===================================
-   CHECKOUT PAGE STYLES
+   CUSTOM CHECKOUT STYLES
 ==================================== */
-.custom-checkout-page {
+.custom-checkout-wrapper {
+    font-family: 'Poppins', sans-serif;
     background: #fff;
 }
 
-/* ===================================
-   BREADCRUMB
-==================================== */
+/* Breadcrumb */
 .breadcrumb-section {
     padding: 80px 0 20px;
     background: #fff;
@@ -227,6 +261,9 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 .breadcrumb {
     background: transparent;
     padding: 0;
+    margin: 0;
+    list-style: none;
+    display: flex;
 }
 
 .breadcrumb-item {
@@ -240,57 +277,57 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 }
 
 .breadcrumb-item a:hover {
-    color: var(--primary-color);
+    color: #DB4444;
+}
+
+.breadcrumb-item+.breadcrumb-item::before {
+    content: "/";
+    padding: 0 8px;
+    color: #666;
 }
 
 .breadcrumb-item.active {
     color: #000;
 }
 
-.breadcrumb-item+.breadcrumb-item::before {
-    content: "/";
-    color: #666;
-    padding: 0 8px;
-}
-
-/* ===================================
-   SECTION TITLES
-==================================== */
-.checkout-section-title {
+/* Checkout Title */
+.checkout-title {
     font-size: 36px;
     font-weight: 500;
     color: #000;
     margin-bottom: 48px;
+    font-family: 'Poppins', sans-serif;
 }
 
-/* ===================================
-   BILLING DETAILS
-==================================== */
-.billing-details-wrapper {
-    background: #fff;
+/* Billing Fields */
+.woocommerce-billing-fields__field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
 }
 
-/* Form Fields */
-.woocommerce-billing-fields .form-row {
-    margin-bottom: 32px;
+.form-row {
+    margin: 0 !important;
 }
 
-.woocommerce-billing-fields label {
+.form-row label {
     display: block;
     margin-bottom: 8px;
     font-size: 16px;
     color: rgba(0, 0, 0, 0.6);
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
 }
 
-.woocommerce-billing-fields .required {
-    color: var(--primary-color);
+.form-row label .required {
+    color: #DB4444;
 }
 
-.woocommerce-billing-fields input[type="text"],
-.woocommerce-billing-fields input[type="email"],
-.woocommerce-billing-fields input[type="tel"],
-.woocommerce-billing-fields textarea,
-.woocommerce-billing-fields select {
+.form-row input[type="text"],
+.form-row input[type="email"],
+.form-row input[type="tel"],
+.form-row textarea,
+.form-row select {
     width: 100%;
     height: 50px;
     padding: 0 16px;
@@ -298,48 +335,52 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     border-radius: 4px;
     font-size: 16px;
     background: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
     transition: all 0.3s ease;
 }
 
-.woocommerce-billing-fields textarea {
+.form-row textarea {
     height: 100px;
     padding: 16px;
     resize: vertical;
 }
 
-.woocommerce-billing-fields input:focus,
-.woocommerce-billing-fields textarea:focus,
-.woocommerce-billing-fields select:focus {
+.form-row input:focus,
+.form-row textarea:focus,
+.form-row select:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #DB4444;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(219, 68, 68, 0.1);
 }
 
-.woocommerce-billing-fields .form-row-first,
-.woocommerce-billing-fields .form-row-last {
+.form-row select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+}
+
+/* Two columns for first/last name */
+.form-row-first,
+.form-row-last {
     width: 48%;
-    float: left;
+    display: inline-block;
 }
 
-.woocommerce-billing-fields .form-row-first {
-    margin-right: 4%;
+.form-row-first {
+    margin-right: 4% !important;
 }
 
-.woocommerce-billing-fields .form-row-wide {
+.form-row-wide {
+    width: 100%;
     clear: both;
 }
 
-/* ===================================
-   ORDER REVIEW
-==================================== */
-.order-review-wrapper {
-    position: sticky;
-    top: 100px;
-}
-
-/* Order Items List */
-.order-items-list {
+/* Order Items */
+.order-items-wrapper {
     border: 1px solid #e5e5e5;
     border-radius: 4px;
     padding: 24px;
@@ -348,7 +389,7 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     overflow-y: auto;
 }
 
-.order-item {
+.checkout-order-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -356,13 +397,13 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     border-bottom: 1px solid #e5e5e5;
 }
 
-.order-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+.checkout-order-item:first-child {
+    padding-top: 0;
 }
 
-.order-item:first-child {
-    padding-top: 0;
+.checkout-order-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .item-info {
@@ -382,8 +423,8 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     width: 100%;
     height: 100%;
     object-fit: contain;
-    padding: 8px;
     background: #f5f5f5;
+    padding: 8px;
     border-radius: 4px;
 }
 
@@ -396,22 +437,82 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     font-weight: 400;
     color: #000;
     margin-bottom: 4px;
+    font-family: 'Poppins', sans-serif;
 }
 
-.item-quantity {
+.item-qty {
     font-size: 14px;
     color: #666;
+    font-family: 'Poppins', sans-serif;
 }
 
 .item-total {
     font-size: 16px;
     font-weight: 500;
     color: #000;
-    margin-left: 16px;
+    font-family: 'Poppins', sans-serif;
 }
 
-/* Order Totals */
-.order-totals {
+/* Coupon */
+.coupon-wrapper {
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+}
+
+.coupon-details {
+    font-family: 'Poppins', sans-serif;
+}
+
+.coupon-details summary {
+    cursor: pointer;
+    font-size: 16px;
+    color: #000;
+    list-style: none;
+}
+
+.coupon-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.coupon-form {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.coupon-form .input-text {
+    flex: 1;
+    height: 50px;
+    padding: 0 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    font-size: 16px;
+    background: #f5f5f5;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-apply-coupon {
+    height: 50px;
+    padding: 0 24px;
+    background: #DB4444;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-apply-coupon:hover {
+    background: #C13333;
+}
+
+/* Totals */
+.checkout-totals {
     border: 1px solid #e5e5e5;
     border-radius: 4px;
     padding: 24px;
@@ -425,6 +526,11 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     padding: 16px 0;
     font-size: 16px;
     border-bottom: 1px solid #e5e5e5;
+    font-family: 'Poppins', sans-serif;
+}
+
+.totals-row:first-child {
+    padding-top: 0;
 }
 
 .totals-row:last-child {
@@ -432,19 +538,13 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     padding-bottom: 0;
 }
 
-.totals-row:first-child {
-    padding-top: 0;
-}
-
 .total-row {
     font-weight: 600;
-    font-size: 16px;
+    font-size: 18px;
 }
 
-/* ===================================
-   PAYMENT METHODS
-==================================== */
-.payment-methods-wrapper {
+/* Payment */
+.checkout-payment {
     border: 1px solid #e5e5e5;
     border-radius: 4px;
     padding: 24px;
@@ -467,9 +567,11 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     display: flex;
     align-items: center;
     padding: 16px;
-    cursor: pointer;
     margin: 0;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    transition: background 0.3s ease;
 }
 
 .wc_payment_method label:hover {
@@ -480,70 +582,49 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
     margin-right: 12px;
 }
 
-.wc_payment_method .payment_box {
+.payment_box {
     padding: 16px;
     background: #f5f5f5;
     border-top: 1px solid #e5e5e5;
-    display: none;
-}
-
-.wc_payment_method.checked .payment_box {
-    display: block;
+    font-family: 'Poppins', sans-serif;
 }
 
 /* Place Order Button */
-.place-order-btn {
+.btn-place-order {
+    width: 100%;
     height: 56px;
-    font-size: 16px;
-    font-weight: 500;
-    border: none;
+    background: #DB4444 !important;
+    color: #fff !important;
+    border: none !important;
     border-radius: 4px;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+    font-family: 'Poppins', sans-serif !important;
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.place-order-btn:hover {
+.btn-place-order:hover {
+    background: #C13333 !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(219, 68, 68, 0.4);
 }
 
-/* Terms & Conditions */
-.woocommerce-terms-and-conditions-wrapper {
-    margin-bottom: 24px;
-}
-
-.woocommerce-terms-and-conditions-checkbox-text {
-    font-size: 14px;
-    color: #666;
-}
-
-.woocommerce-terms-and-conditions-checkbox-text a {
-    color: var(--primary-color);
-    text-decoration: underline;
-}
-
-/* ===================================
-   RESPONSIVE
-==================================== */
+/* Responsive */
 @media (max-width: 991px) {
     .breadcrumb-section {
         padding: 60px 0 20px;
     }
 
-    .checkout-section-title {
+    .checkout-title {
         font-size: 28px;
         margin-bottom: 32px;
     }
 
-    .order-review-wrapper {
-        position: static;
-        margin-top: 40px;
-    }
-
-    .woocommerce-billing-fields .form-row-first,
-    .woocommerce-billing-fields .form-row-last {
+    .form-row-first,
+    .form-row-last {
         width: 100%;
-        float: none;
-        margin-right: 0;
+        margin-right: 0 !important;
     }
 }
 
@@ -552,28 +633,28 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
         padding: 40px 0 15px;
     }
 
-    .checkout-section-title {
+    .checkout-title {
         font-size: 24px;
         margin-bottom: 24px;
     }
 
-    .woocommerce-billing-fields .form-row {
-        margin-bottom: 24px;
+    .woocommerce-billing-fields__field-wrapper {
+        gap: 24px;
     }
 
-    .woocommerce-billing-fields input[type="text"],
-    .woocommerce-billing-fields input[type="email"],
-    .woocommerce-billing-fields input[type="tel"],
-    .woocommerce-billing-fields select {
+    .form-row input[type="text"],
+    .form-row input[type="email"],
+    .form-row input[type="tel"],
+    .form-row select {
         height: 44px;
         font-size: 14px;
     }
 
-    .order-items-list {
+    .order-items-wrapper {
         padding: 16px;
     }
 
-    .order-item {
+    .checkout-order-item {
         padding: 12px 0;
     }
 
@@ -586,13 +667,13 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
         font-size: 14px;
     }
 
-    .item-quantity,
+    .item-qty,
     .item-total {
         font-size: 13px;
     }
 
-    .order-totals,
-    .payment-methods-wrapper {
+    .checkout-totals,
+    .checkout-payment {
         padding: 16px;
     }
 
@@ -601,9 +682,42 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
         padding: 12px 0;
     }
 
-    .place-order-btn {
+    .btn-place-order {
         height: 48px;
-        font-size: 14px;
+        font-size: 14px !important;
     }
 }
 </style>
+
+<script>
+jQuery(document).ready(function($) {
+    // Apply coupon
+    $('.btn-apply-coupon').on('click', function(e) {
+        e.preventDefault();
+
+        var couponCode = $('#coupon_code').val();
+
+        if (!couponCode) {
+            alert('Please enter a coupon code');
+            return;
+        }
+
+        $.ajax({
+            url: wc_checkout_params.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'woocommerce_apply_coupon',
+                security: wc_checkout_params.apply_coupon_nonce,
+                coupon_code: couponCode
+            },
+            success: function(response) {
+                $('.woocommerce-error, .woocommerce-message').remove();
+
+                if (response) {
+                    $(document.body).trigger('update_checkout');
+                }
+            }
+        });
+    });
+});
+</script>

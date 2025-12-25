@@ -106,7 +106,8 @@ get_header();
     <section class="team-section py-5">
         <div class="container">
             <div class="team-slider-wrapper position-relative">
-                <div class="swiper teamSwiper">
+                <!-- Preload container - Hide until ready -->
+                <div class="swiper teamSwiper team-swiper-ready">
                     <div class="swiper-wrapper">
                         <?php
                         // Query team members
@@ -341,6 +342,19 @@ endif; ?>
 
 .team-slider-wrapper {
     position: relative;
+    min-height: 600px;
+}
+
+/* Hide Swiper until it's initialized */
+.team-swiper-ready {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.team-swiper-ready.swiper-initialized {
+    opacity: 1;
+    visibility: visible;
 }
 
 .teamSwiper {
@@ -358,12 +372,16 @@ endif; ?>
     height: 430px;
     overflow: hidden;
     background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .team-image img {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    padding: 20px;
 }
 
 .team-info {
@@ -443,6 +461,10 @@ endif; ?>
     .team-name {
         font-size: 24px;
     }
+
+    .team-slider-wrapper {
+        min-height: 500px;
+    }
 }
 
 @media (max-width: 767px) {
@@ -495,14 +517,47 @@ endif; ?>
     .team-social a {
         font-size: 18px;
     }
+
+    .team-slider-wrapper {
+        min-height: 400px;
+    }
+
+    /* Fix Swiper on mobile */
+    .teamSwiper {
+        overflow: visible;
+    }
+
+    .swiper-slide {
+        display: flex;
+    }
 }
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Team Swiper
-    if (typeof Swiper !== 'undefined') {
-        const teamSwiper = new Swiper('.teamSwiper', {
+// Initialize Team Swiper IMMEDIATELY when DOM is ready
+(function() {
+    'use strict';
+
+    function initTeamSwiper() {
+        if (typeof Swiper === 'undefined') {
+            // Retry if Swiper not loaded yet
+            setTimeout(initTeamSwiper, 100);
+            return;
+        }
+
+        const swiperElement = document.querySelector('.team-swiper-ready');
+
+        if (!swiperElement) {
+            return;
+        }
+
+        // Check if already initialized
+        if (swiperElement.classList.contains('swiper-initialized')) {
+            return;
+        }
+
+        // Initialize Swiper
+        const swiper = new Swiper('.teamSwiper', {
             slidesPerView: 1,
             spaceBetween: 30,
             pagination: {
@@ -519,9 +574,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     spaceBetween: 30,
                 },
             },
+            // Critical settings to prevent layout shift
+            autoHeight: false,
+            watchSlidesProgress: true,
+            speed: 300,
         });
+
+        // Mark as initialized and show
+        swiperElement.classList.add('swiper-initialized');
     }
-});
+
+    // Execute as soon as DOM is interactive
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTeamSwiper);
+    } else {
+        initTeamSwiper();
+    }
+})();
 </script>
 
 <?php get_footer(); ?>
